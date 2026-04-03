@@ -54,10 +54,10 @@ REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
 4. Run the Application
 
 ~~~ bash
-  `npm` start
+  npm start
 ~~~
 
-The application will automatically open in your browser at `http://localhost:3000`.
+The application will automatically open in your browser at http://localhost:3000[Lpcal Host](http://localhost:3000).
 
 > ⚠️ Final Step Before Publishing (Very Important)
 >
