@@ -1,3 +1,10 @@
+/**
+ * Monye App - Personal Finance Tracker
+ * * Features:
+ * - Single Page Application (SPA) architecture for seamless navigation.
+ * - Built-in Desmos Calculator integrated via Desmos API.
+ * - Modern UI components inspired by shadcn/ui.
+ */
 import React, {
   useState,
   createContext,
@@ -34,6 +41,7 @@ import {
 // KONFIGURASI DATABASE API
 // Masukkan URL Web App dari Google Apps Script Anda di sini
 const API_URL =
+  process.env.REACT_APP_APPSCRIPT_URL || 
   "https://script.google.com/macros/s/AKfycbyGfd8GhA-oy0mVf_0fV_cVP-tWcKD9SE39CCehN2XkVKwvhzaFcSFoYgO9YNsoN0kSsQ/exec";
 // ==========================================
 
@@ -46,12 +54,12 @@ const AppProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ambil data dari Spreadsheet saat aplikasi pertama kali dimuat
+  // Fetch data from Spreadsheet on initial load
   useEffect(() => {
     const fetchData = async () => {
-      if (API_URL === "URL_APPSCRIPT_ANDA_DI_SINI") {
+      if (!API_URL) {
         console.warn(
-          "API URL belum diisi. Aplikasi akan menggunakan array kosong."
+          "API URL is not configured. App will use an empty array."
         );
         setIsLoading(false);
         return;
@@ -67,7 +75,7 @@ const AppProvider = ({ children }) => {
           setTransactions(data.data.transactions || []);
         }
       } catch (error) {
-        console.error("Gagal mengambil data dari server:", error);
+        console.error("Failed to fetch data from server:", error);
       } finally {
         setIsLoading(false);
       }
@@ -76,16 +84,16 @@ const AppProvider = ({ children }) => {
     fetchData();
   }, []);
 
-  // Fungsi helper untuk mengirim data ke server
+  // Helper function to sync data with the server
   const syncWithServer = async (action, data) => {
-    if (API_URL === "URL_APPSCRIPT_ANDA_DI_SINI") return;
+    if (!API_URL) return;
     try {
       await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify({ action, data }),
       });
     } catch (error) {
-      console.error(`Gagal sinkronisasi aksi ${action}:`, error);
+      console.error(`Failed to sync action ${action}:`, error);
     }
   };
 
@@ -121,7 +129,7 @@ const AppProvider = ({ children }) => {
     setTransactions([newTrx, ...transactions]);
     syncWithServer("addTransaction", newTrx);
 
-    // Update Saldo Dompet secara lokal dan sinkronisasi
+    // Update Wallet Balance locally and sync
     if (trx.type === "Income") {
       const wallet = wallets.find((w) => w.id === trx.wallet_id);
       if (wallet)
@@ -285,7 +293,7 @@ const PaginationEllipsis = ({ className, ...props }) => (
     {...props}
   >
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">Lebih banyak halaman</span>
+    <span className="sr-only">More pages</span>
   </span>
 );
 
@@ -466,7 +474,7 @@ const Calendar = ({ selected, onSelect }) => {
     );
   };
 
-  const monthName = new Intl.DateTimeFormat("id-ID", {
+  const monthName = new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric",
   }).format(currentMonth);
@@ -491,7 +499,7 @@ const Calendar = ({ selected, onSelect }) => {
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-[0.8rem] text-[#4C5D81] mb-2">
-        {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((d) => (
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="font-medium">
             {d}
           </div>
@@ -650,24 +658,21 @@ const SelectItem = ({ value, children, className = "" }) => {
 
 // --- HELPER FUNCTIONS ---
 
-// Mengekstrak root domain (misal: https://www.bca.co.id -> bca.co.id)
+// Extract root domain (e.g. https://www.chase.com -> chase.com)
 const extractDomain = (url) => {
   if (!url) return "";
   let domain = url.trim();
-  // Hilangkan protokol http/https
   if (domain.indexOf("://") > -1) {
     domain = domain.split('/')[2];
   } else {
     domain = domain.split('/')[0];
   }
-  // Hilangkan port jika ada
   domain = domain.split(':')[0];
-  // Hilangkan www.
   domain = domain.replace(/^www\./, '');
   return domain;
 };
 
-// Fungsi memberi format titik saat mengetik angka (HANYA VISUAL)
+// Format input with dots while typing
 const formatNumberInput = (val) => {
   if (!val && val !== 0) return "";
   let stringVal = val.toString().replace(/\D/g, "");
@@ -676,22 +681,22 @@ const formatNumberInput = (val) => {
   return stringVal.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-// Fungsi menghapus titik saat akan disimpan (ANGKA MURNI)
+// Parse input string to raw number
 const parseNumberInput = (val) => {
   return val.toString().replace(/\./g, "").replace(/\D/g, "");
 };
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("id-ID", {
+  new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "IDR",
+    currency: "IDR", // Keeping IDR as per base design, but localized to english formatting
     minimumFractionDigits: 0,
   }).format(amount);
 const formatShortCurrency = (amount) =>
   amount >= 1000000
-    ? `Rp${(amount / 1000000).toFixed(1)}Jt`
+    ? `Rp${(amount / 1000000).toFixed(1)}M`
     : amount >= 1000
-    ? `Rp${(amount / 1000).toFixed(0)}rb`
+    ? `Rp${(amount / 1000).toFixed(0)}k`
     : `Rp${amount}`;
 const formatDateStr = (dateObj) => {
   const d = new Date(dateObj);
@@ -699,7 +704,7 @@ const formatDateStr = (dateObj) => {
   return d.toISOString().split("T")[0];
 };
 const formatDatePPP = (date) =>
-  new Intl.DateTimeFormat("id-ID", {
+  new Intl.DateTimeFormat("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -714,9 +719,11 @@ const BrandIcon = ({ domain, size = 16, className = "" }) => {
     return <Wallet size={size} className={className} />;
   }
 
+  const brandfetchKey = process.env.REACT_APP_BRANDFETCH_API_KEY || "1idpg7kO2mvAgJplzZR";
+
   return (
     <img
-      src={`https://cdn.brandfetch.io/${domain}/icon.png?c=1idpg7kO2mvAgJplzZR`}
+      src={`https://cdn.brandfetch.io/${domain}/icon.png?c=${brandfetchKey}`}
       alt="Brand Logo"
       style={{ width: size, height: size }}
       className={`object-contain ${className}`}
@@ -743,10 +750,10 @@ const FloatingCalculator = () => {
     };
 
     if (!document.getElementById(scriptId)) {
+      const desmosKey = process.env.REACT_APP_DESMOS_API_KEY || "aea0164e7c4348649ba21c93c4a4a54c";
       const script = document.createElement("script");
       script.id = scriptId;
-      script.src =
-        "https://www.desmos.com/api/v1.11/calculator.js?apiKey=aea0164e7c4348649ba21c93c4a4a54c";
+      script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${desmosKey}`;
       script.async = true;
       script.onload = initDesmos;
       document.body.appendChild(script);
@@ -782,8 +789,8 @@ const FloatingCalculator = () => {
       >
         <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-[#33406C] shrink-0">
           <h3 className="font-semibold text-sm text-white flex items-center gap-2">
-            <CalculatorIcon size={16} className="text-[#F9C51C]" /> Kalkulator
-            Cepat
+            <CalculatorIcon size={16} className="text-[#F9C51C]" /> Quick
+            Calculator
           </h3>
           <button
             onClick={() => setIsOpen(false)}
@@ -815,7 +822,7 @@ const DashboardView = () => {
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#F9C51C]/10 rounded-full blur-3xl -ml-10 -mb-10"></div>
         <p className="text-[#F9C51C] text-sm md:text-base font-semibold mb-1 relative z-10 tracking-wide uppercase">
-          Total Saldo Gabungan
+          Total Combined Balance
         </p>
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight relative z-10 text-white">
           {formatCurrency(totalBalance)}
@@ -824,11 +831,11 @@ const DashboardView = () => {
 
       <div>
         <h2 className="text-lg md:text-xl font-bold mb-4 flex items-center gap-2 text-[#33406C]">
-          <Wallet size={20} className="text-[#4C5D81]" /> Daftar Dompet
+          <Wallet size={20} className="text-[#4C5D81]" /> Wallets List
         </h2>
         {wallets.length === 0 ? (
           <div className="text-center py-8 text-[#4C5D81] bg-white rounded-xl border border-dashed border-slate-300">
-            Belum ada dompet. Tambahkan di menu Settings.
+            No wallets yet. Add one in Settings.
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -870,7 +877,7 @@ const TransactionFormView = () => {
   const twoDaysAgo = new Date(today);
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-  const [dateSelection, setDateSelection] = useState("Hari Ini");
+  const [dateSelection, setDateSelection] = useState("Today");
   const [customDateObj, setCustomDateObj] = useState(today);
 
   const [amount, setAmount] = useState("");
@@ -902,18 +909,18 @@ const TransactionFormView = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || isNaN(parseFloat(amount)))
-      return alert("Masukkan jumlah yang valid");
+      return alert("Enter a valid amount");
     if (type !== "Transfer" && !walletId)
-      return alert("Pilih Dompet terlebih dahulu");
+      return alert("Select a Wallet first");
     if (type !== "Transfer" && !categoryId)
-      return alert("Pilih Kategori terlebih dahulu");
+      return alert("Select a Category first");
     if (type === "Transfer" && (!fromWalletId || !toWalletId))
-      return alert("Pilih Dompet Asal dan Tujuan");
+      return alert("Select Source and Destination Wallets");
 
     let finalDate;
-    if (dateSelection === "Hari Ini") finalDate = formatDateStr(today);
-    else if (dateSelection === "Kemarin") finalDate = formatDateStr(yesterday);
-    else if (dateSelection === "Kemarin Lusa")
+    if (dateSelection === "Today") finalDate = formatDateStr(today);
+    else if (dateSelection === "Yesterday") finalDate = formatDateStr(yesterday);
+    else if (dateSelection === "2 Days Ago")
       finalDate = formatDateStr(twoDaysAgo);
     else finalDate = formatDateStr(customDateObj);
 
@@ -926,7 +933,7 @@ const TransactionFormView = () => {
 
     if (type === "Transfer") {
       if (fromWalletId === toWalletId)
-        return alert("Dompet asal dan tujuan tidak boleh sama");
+        return alert("Source and destination wallets cannot be the same");
       trxData.from_wallet_id = fromWalletId;
       trxData.to_wallet_id = toWalletId;
       trxData.category_id = null;
@@ -936,7 +943,7 @@ const TransactionFormView = () => {
     }
 
     addTransaction(trxData);
-    alert("Transaksi berhasil disimpan!");
+    alert("Transaction saved successfully!");
     setAmount("");
     setNotes("");
   };
@@ -946,7 +953,7 @@ const TransactionFormView = () => {
   return (
     <div className="w-full max-w-xl mx-auto animate-in slide-in-from-bottom-2 space-y-4 md:space-y-6">
       <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-        Catat Transaksi
+        Record Transaction
       </h2>
 
       <div className="flex p-1.5 bg-slate-100 rounded-lg">
@@ -986,13 +993,13 @@ const TransactionFormView = () => {
             )}
             <span className="hidden sm:inline">
               {t === "Income"
-                ? "Pemasukan"
+                ? "Income"
                 : t === "Expense"
-                ? "Pengeluaran"
+                ? "Expense"
                 : "Transfer"}
             </span>
             <span className="sm:hidden">
-              {t === "Income" ? "Masuk" : t === "Expense" ? "Keluar" : "Trf"}
+              {t === "Income" ? "In" : t === "Expense" ? "Out" : "Trf"}
             </span>
           </button>
         ))}
@@ -1002,7 +1009,7 @@ const TransactionFormView = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <div className="flex justify-between items-end">
-              <Label className="text-[#4C5D81]">Jumlah (Rp)</Label>
+              <Label className="text-[#4C5D81]">Amount (IDR)</Label>
               <div className="flex gap-1.5">
                 <button
                   type="button"
@@ -1032,9 +1039,9 @@ const TransactionFormView = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#4C5D81]">Tanggal</Label>
+            <Label className="text-[#4C5D81]">Date</Label>
             <div className="flex flex-wrap gap-2">
-              {["Hari Ini", "Kemarin", "Kemarin Lusa", "Kustom"].map((ds) => (
+              {["Today", "Yesterday", "2 Days Ago", "Custom"].map((ds) => (
                 <button
                   type="button"
                   key={ds}
@@ -1050,7 +1057,7 @@ const TransactionFormView = () => {
               ))}
             </div>
 
-            {dateSelection === "Kustom" && (
+            {dateSelection === "Custom" && (
               <div className="mt-3">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -1065,7 +1072,7 @@ const TransactionFormView = () => {
                       {customDateObj ? (
                         formatDatePPP(customDateObj)
                       ) : (
-                        <span>Pilih tanggal</span>
+                        <span>Select date</span>
                       )}
                       <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                     </Button>
@@ -1086,15 +1093,15 @@ const TransactionFormView = () => {
           {type !== "Transfer" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Dompet</Label>
+                <Label className="text-[#4C5D81]">Wallet</Label>
                 <Select value={walletId} onValueChange={setWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Pilih Dompet" />
+                    <SelectValue placeholder="Select Wallet" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {wallets.length === 0 && (
-                        <SelectLabel>Belum ada dompet</SelectLabel>
+                        <SelectLabel>No wallets yet</SelectLabel>
                       )}
                       {wallets.map((w) => (
                         <SelectItem key={w.id} value={w.id}>
@@ -1109,15 +1116,15 @@ const TransactionFormView = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Kategori</Label>
+                <Label className="text-[#4C5D81]">Category</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Pilih Kategori" />
+                    <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {filteredCategories.length === 0 && (
-                        <SelectLabel>Tidak ada kategori</SelectLabel>
+                        <SelectLabel>No categories yet</SelectLabel>
                       )}
                       {filteredCategories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
@@ -1132,10 +1139,10 @@ const TransactionFormView = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Dari Dompet</Label>
+                <Label className="text-[#4C5D81]">From Wallet</Label>
                 <Select value={fromWalletId} onValueChange={setFromWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Pilih Asal" />
+                    <SelectValue placeholder="Select Source" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -1152,10 +1159,10 @@ const TransactionFormView = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Ke Dompet</Label>
+                <Label className="text-[#4C5D81]">To Wallet</Label>
                 <Select value={toWalletId} onValueChange={setToWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Pilih Tujuan" />
+                    <SelectValue placeholder="Select Destination" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -1175,10 +1182,10 @@ const TransactionFormView = () => {
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-[#4C5D81]">Catatan (Opsional)</Label>
+            <Label className="text-[#4C5D81]">Notes (Optional)</Label>
             <Input
               type="text"
-              placeholder="Cth: Makan siang"
+              placeholder="E.g. Lunch"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="md:h-11 text-[#33406C]"
@@ -1189,7 +1196,7 @@ const TransactionFormView = () => {
             type="submit"
             className="w-full mt-4 h-12 md:h-14 text-md md:text-lg bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold shadow-md"
           >
-            Simpan Transaksi
+            Save Transaction
           </Button>
         </form>
       </Card>
@@ -1253,7 +1260,7 @@ const HistoryView = () => {
     <div className="w-full max-w-2xl mx-auto animate-in slide-in-from-bottom-2 space-y-4 md:space-y-6">
       <div className="flex justify-between items-center z-20 relative">
         <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-          Riwayat
+          History
         </h2>
 
         <div className="flex items-center gap-2">
@@ -1264,9 +1271,9 @@ const HistoryView = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="10">10 / Hlm</SelectItem>
-                  <SelectItem value="20">20 / Hlm</SelectItem>
-                  <SelectItem value="All">Semua</SelectItem>
+                  <SelectItem value="10">10 / Page</SelectItem>
+                  <SelectItem value="20">20 / Page</SelectItem>
+                  <SelectItem value="All">All</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -1279,9 +1286,9 @@ const HistoryView = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="All">Semua Tipe</SelectItem>
-                  <SelectItem value="Income">Pemasukan</SelectItem>
-                  <SelectItem value="Expense">Pengeluaran</SelectItem>
+                  <SelectItem value="All">All Types</SelectItem>
+                  <SelectItem value="Income">Income</SelectItem>
+                  <SelectItem value="Expense">Expense</SelectItem>
                   <SelectItem value="Transfer">Transfer</SelectItem>
                 </SelectGroup>
               </SelectContent>
@@ -1293,7 +1300,7 @@ const HistoryView = () => {
       <div className="space-y-3 md:space-y-4 min-h-[400px]">
         {currentItems.length === 0 ? (
           <div className="text-center text-[#4C5D81] py-12 bg-slate-50 rounded-xl md:rounded-2xl border border-dashed border-slate-300">
-            Belum ada transaksi.
+            No transactions yet.
           </div>
         ) : (
           currentItems.map((trx) => {
@@ -1324,7 +1331,7 @@ const HistoryView = () => {
                   <div className="overflow-hidden">
                     <p className="text-sm md:text-base font-bold text-[#33406C] truncate">
                       {trx.type === "Transfer"
-                        ? "Transfer Saldo"
+                        ? "Balance Transfer"
                         : category?.name || "Uncategorized"}
                     </p>
                     <div className="flex items-center text-xs md:text-sm text-[#4C5D81] gap-2 mt-0.5">
@@ -1480,28 +1487,28 @@ const RecapView = () => {
     "Feb",
     "Mar",
     "Apr",
-    "Mei",
+    "May",
     "Jun",
     "Jul",
-    "Ags",
+    "Aug",
     "Sep",
-    "Okt",
+    "Oct",
     "Nov",
-    "Des",
+    "Dec",
   ];
 
   return (
     <div className="w-full max-w-3xl mx-auto animate-in slide-in-from-bottom-2 space-y-5 md:space-y-6">
       <div className="flex justify-between items-center z-20 relative">
         <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-          Rekap Data
+          Data Recap
         </h2>
 
         {availableYears.length > 0 && (
           <div className="w-24 md:w-32">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="h-8 md:h-10 py-1 text-xs md:text-sm bg-white/80 backdrop-blur-sm shadow-sm font-semibold text-[#33406C]">
-                <SelectValue placeholder="Tahun" />
+                <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -1519,14 +1526,14 @@ const RecapView = () => {
 
       {availableYears.length === 0 ? (
         <div className="text-center text-[#4C5D81] py-12 bg-slate-50 rounded-xl md:rounded-2xl border border-dashed border-slate-300">
-          Belum ada data transaksi.
+          No transaction data yet.
         </div>
       ) : (
         <Card className="p-5 md:p-8 space-y-6 md:space-y-8 shadow-sm">
           <div className="grid grid-cols-2 gap-4 md:gap-8 border-b border-slate-100 pb-6">
             <div className="bg-[#33406C]/5 p-4 rounded-xl">
               <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
-                <TrendingUp size={16} className="text-green-500" /> Total Masuk
+                <TrendingUp size={16} className="text-green-500" /> Total Income
               </p>
               <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
                 {formatCurrency(totalYearlyIncome)}
@@ -1534,7 +1541,7 @@ const RecapView = () => {
             </div>
             <div className="bg-red-50 p-4 rounded-xl">
               <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
-                <TrendingDown size={16} className="text-red-500" /> Total Keluar
+                <TrendingDown size={16} className="text-red-500" /> Total Expense
               </p>
               <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
                 {formatCurrency(totalYearlyExpense)}
@@ -1553,10 +1560,10 @@ const RecapView = () => {
                 >
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-14 bg-[#33406C] text-white text-[10px] md:text-xs py-1.5 px-3 rounded-md pointer-events-none whitespace-nowrap z-10 shadow-xl flex flex-col gap-0.5">
                     <span className="text-green-300 font-medium">
-                      Masuk: {formatShortCurrency(data.income)}
+                      Income: {formatShortCurrency(data.income)}
                     </span>
                     <span className="text-[#F9C51C] font-medium">
-                      Keluar: {formatShortCurrency(data.expense)}
+                      Expense: {formatShortCurrency(data.expense)}
                     </span>
                   </div>
 
@@ -1598,7 +1605,7 @@ const SettingsView = () => {
   const [walletName, setWalletName] = useState("");
   const [walletType, setWalletType] = useState("Cash");
   const [walletBalance, setWalletBalance] = useState("");
-  const [walletDomain, setWalletDomain] = useState(""); // STATE BARU UNTUK WEBSITE DOMAIN
+  const [walletDomain, setWalletDomain] = useState(""); 
 
   const [catName, setCatName] = useState("");
   const [catType, setCatType] = useState("Expense");
@@ -1617,7 +1624,7 @@ const SettingsView = () => {
       name: walletName,
       type: walletType,
       balance: parseFloat(walletBalance) || 0,
-      domain: extractDomain(walletDomain), // Simpan versi bersih dari domain yang diinput
+      domain: extractDomain(walletDomain),
     });
     setIsWalletDialogOpen(false);
     setWalletName("");
@@ -1649,7 +1656,7 @@ const SettingsView = () => {
               : "border-transparent text-[#4C5D81] hover:text-[#33406C]"
           }`}
         >
-          Dompet
+          Wallets
         </button>
         <button
           onClick={() => setActiveTab("categories")}
@@ -1659,7 +1666,7 @@ const SettingsView = () => {
               : "border-transparent text-[#4C5D81] hover:text-[#33406C]"
           }`}
         >
-          Kategori
+          Categories
         </button>
       </div>
 
@@ -1674,48 +1681,47 @@ const SettingsView = () => {
                 variant="outline"
                 className="w-full mb-2 md:h-12 border-dashed border-2 border-[#33406C]/40 bg-white text-[#33406C] font-bold hover:bg-[#33406C]/5 hover:border-[#33406C]"
               >
-                <Plus size={20} className="mr-2 text-[#33406C]" /> Tambah Dompet
-                Baru
+                <Plus size={20} className="mr-2 text-[#33406C]" /> Add New Wallet
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <form onSubmit={handleAddWallet}>
                 <DialogHeader>
-                  <DialogTitle>Tambah Dompet</DialogTitle>
+                  <DialogTitle>Add Wallet</DialogTitle>
                   <DialogDescription>
-                    Masukkan detail dompet atau rekening baru Anda di sini.
+                    Enter your new wallet or bank account details here.
                   </DialogDescription>
                 </DialogHeader>
                 <FieldGroup>
                   <Field>
-                    <Label htmlFor="w-name">Nama Dompet</Label>
+                    <Label htmlFor="w-name">Wallet Name</Label>
                     <Input
                       id="w-name"
                       value={walletName}
                       onChange={(e) => setWalletName(e.target.value)}
                       required
-                      placeholder="Cth: BCA, OVO..."
+                      placeholder="E.g. Chase, PayPal..."
                     />
                   </Field>
                   <Field>
                     <Label htmlFor="w-domain">
-                      Website Platform (Opsional)
+                      Platform Website (Optional)
                     </Label>
                     <Input
                       id="w-domain"
                       value={walletDomain}
                       onChange={(e) => setWalletDomain(e.target.value)}
-                      placeholder="Cth: bca.co.id, ovo.id"
+                      placeholder="E.g. chase.com, paypal.com"
                     />
                     <span className="text-[10px] text-[#4C5D81]">
-                      Masukkan web platform untuk menampilkan logo otomatis.
+                      Enter platform web to show logo automatically.
                     </span>
                   </Field>
                   <Field>
-                    <Label>Tipe</Label>
+                    <Label>Type</Label>
                     <Select value={walletType} onValueChange={setWalletType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Pilih Tipe" />
+                        <SelectValue placeholder="Select Type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -1728,7 +1734,7 @@ const SettingsView = () => {
                   </Field>
                   <Field>
                     <div className="flex justify-between items-end">
-                      <Label htmlFor="w-bal">Saldo Awal (Rp)</Label>
+                      <Label htmlFor="w-bal">Initial Balance (IDR)</Label>
                       <div className="flex gap-1.5">
                         <button
                           type="button"
@@ -1762,14 +1768,14 @@ const SettingsView = () => {
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
-                      Batal
+                      Cancel
                     </Button>
                   </DialogClose>
                   <Button
                     type="submit"
                     className="bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold"
                   >
-                    Simpan
+                    Save
                   </Button>
                 </DialogFooter>
               </form>
@@ -1794,7 +1800,7 @@ const SettingsView = () => {
                       </span>
                     </p>
                     <p className="text-xs md:text-sm text-[#4C5D81] mt-0.5 truncate">
-                      Saldo: {formatCurrency(w.balance)}
+                      Balance: {formatCurrency(w.balance)}
                     </p>
                   </div>
                 </div>
@@ -1822,39 +1828,38 @@ const SettingsView = () => {
                 variant="outline"
                 className="w-full mb-2 md:h-12 border-dashed border-2 border-[#33406C]/40 bg-white text-[#33406C] font-bold hover:bg-[#33406C]/5 hover:border-[#33406C]"
               >
-                <Plus size={20} className="mr-2 text-[#33406C]" /> Tambah
-                Kategori Baru
+                <Plus size={20} className="mr-2 text-[#33406C]" /> Add New Category
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <form onSubmit={handleAddCategory}>
                 <DialogHeader>
-                  <DialogTitle>Tambah Kategori</DialogTitle>
+                  <DialogTitle>Add Category</DialogTitle>
                   <DialogDescription>
-                    Masukkan nama kategori pengeluaran atau pemasukan baru.
+                    Enter new income or expense category name.
                   </DialogDescription>
                 </DialogHeader>
                 <FieldGroup>
                   <Field>
-                    <Label htmlFor="c-name">Nama Kategori</Label>
+                    <Label htmlFor="c-name">Category Name</Label>
                     <Input
                       id="c-name"
                       value={catName}
                       onChange={(e) => setCatName(e.target.value)}
                       required
-                      placeholder="Cth: Belanja..."
+                      placeholder="E.g. Groceries..."
                     />
                   </Field>
                   <Field>
-                    <Label>Tipe Kategori</Label>
+                    <Label>Category Type</Label>
                     <Select value={catType} onValueChange={setCatType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Pilih Tipe" />
+                        <SelectValue placeholder="Select Type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="Expense">Pengeluaran</SelectItem>
-                          <SelectItem value="Income">Pemasukan</SelectItem>
+                          <SelectItem value="Expense">Expense</SelectItem>
+                          <SelectItem value="Income">Income</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -1863,14 +1868,14 @@ const SettingsView = () => {
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
-                      Batal
+                      Cancel
                     </Button>
                   </DialogClose>
                   <Button
                     type="submit"
                     className="bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold"
                   >
-                    Simpan
+                    Save
                   </Button>
                 </DialogFooter>
               </form>
@@ -1951,9 +1956,9 @@ const NavButton = ({ active, onClick, icon, label }) => {
 const LoadingScreen = () => (
   <div className="absolute inset-0 bg-[#f8f9fa] z-[200] flex flex-col items-center justify-center">
     <Loader2 className="h-12 w-12 text-[#F9C51C] animate-spin mb-4" />
-    <h2 className="text-xl font-bold text-[#33406C] mb-2">Memproses data...</h2>
+    <h2 className="text-xl font-bold text-[#33406C] mb-2">Processing data...</h2>
     <p className="text-[#4C5D81] text-sm text-center px-6">
-      Harap menunggu, mengambil data dari Spreadsheet.
+      Please wait, fetching data from Spreadsheet.
     </p>
   </div>
 );
@@ -1964,20 +1969,14 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
-    // Event ini hanya akan dipicu oleh browser (khususnya Android Chrome) 
-    // JIKA web Anda memiliki manifest.json dan service worker yang valid.
     const handler = (e) => {
-      // Cegah mini-infobar bawaan Chrome agar tidak muncul
       e.preventDefault();
-      // Simpan event agar bisa dipicu nanti saat tombol diklik
       setDeferredPrompt(e);
-      // Tampilkan popup custom kita
       setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
-    // Sembunyikan popup jika user berhasil menginstal dari menu browser
     window.addEventListener("appinstalled", () => {
       setShowPrompt(false);
     });
@@ -1989,9 +1988,7 @@ const InstallPrompt = () => {
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      // Munculkan prompt install bawaan Android
       deferredPrompt.prompt();
-      // Tunggu respons user
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setDeferredPrompt(null);
@@ -2010,7 +2007,6 @@ const InstallPrompt = () => {
           alt="App Logo" 
           className="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-100 p-0.5" 
           onError={(e) => {
-            // Fallback jika logo.png tidak ditemukan
             e.target.style.display = 'none';
             e.target.nextSibling.style.display = 'flex';
           }}
@@ -2023,7 +2019,7 @@ const InstallPrompt = () => {
       <div className="flex-1">
         <h4 className="font-bold text-sm text-[#33406C]">Install Money Talks</h4>
         <p className="text-[10px] md:text-xs text-[#4C5D81] leading-tight mt-0.5">
-          Tambahkan ke layar utama agar lebih cepat diakses.
+          Add to home screen for faster access.
         </p>
       </div>
       
@@ -2038,7 +2034,7 @@ const InstallPrompt = () => {
           onClick={() => setShowPrompt(false)} 
           className="bg-slate-100 text-[#4C5D81] text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
         >
-          Nanti
+          Later
         </button>
       </div>
     </div>
@@ -2081,23 +2077,14 @@ const AppContent = () => {
   return (
     <div className="min-h-[100dvh] w-full bg-slate-100 flex justify-center items-center font-sans md:p-6 lg:p-10 text-[#33406C]">
       <div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl bg-white relative flex flex-col shadow-2xl h-[100dvh] md:h-[90vh] md:rounded-3xl overflow-hidden md:border border-slate-200">
-        {/* TAMPILAN LOADING JIKA MASIH FETCHING DATA */}
         {isLoading && <LoadingScreen />}
-        
-        {/* POPUP INSTALL PWA (Hanya muncul di Android/Chrome yang mendukung) */}
         <InstallPrompt />
 
         <header className="bg-white/90 backdrop-blur-md px-6 md:px-10 py-4 md:py-6 border-b border-slate-100 sticky top-0 z-[100] flex justify-between items-center w-full">
           <h1 className="text-xl md:text-2xl font-black flex items-center gap-3 text-[#33406C] tracking-tight">
-            {/* ==============================================
-                GANTI LOGO ANDA DI BAWAH SINI
-                Hapus elemen <Wallet.../> dan ganti dengan tag <img> 
-                atau komponen SVG Logo Anda sendiri.
-               ============================================== */}
             <span className="bg-[#33406C] text-[#F9C51C] p-2 md:p-2.5 rounded-lg md:rounded-xl shadow-md flex items-center justify-center">
               <img src="/logo.svg" alt="Logo" className="w-6 h-6 md:w-7 md:h-7 object-contain" />
             </span>
-            {/* ============================================== */}
             Money Talks
           </h1>
 
@@ -2156,7 +2143,7 @@ const AppContent = () => {
               active={currentView === "recap"}
               onClick={() => setCurrentView("recap")}
               icon={<BarChart3 size={22} />}
-              label="Rekap"
+              label="Recap"
             />
             <NavButton
               active={currentView === "settings"}
