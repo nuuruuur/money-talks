@@ -24,16 +24,18 @@ Follow these simple steps to run the application locally:
 
 1. Clone Repository
 
-  git clone [https://github.com/your-github-username/monye-main.git](https://github.com/your-github-username/monye-main.git)
-  cd monye-main
-
+~~~
+git clone [https://github.com/your-github-username/monye-main.git](https://github.com/your-github-username/monye-main.git)
+cd monye-main
+~~~
 
 2. Install Dependencies
 
-Make sure you have Node.js installed. Then run the following command:
+Run
 
+~~~
   npm install
-
+~~~
 
 3. Environment Configuration (API Keys)
 
@@ -43,15 +45,17 @@ Duplicate the `.env.example file` and rename it to `.env`.
 
 Open the `.env` file and fill in your Apps Script URL, Brandfetch API Key, and (optionally) Desmos API Key:
 
-  REACT_APP_APPSCRIPT_URL=your_appscript_url_here
-  REACT_APP_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
-  REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
-
+~~~
+REACT_APP_APPSCRIPT_URL=your_appscript_url_here
+REACT_APP_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
+REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
+~~~
 
 4. Run the Application
 
+~~~
   npm start
-
+~~~
 
 The application will automatically open in your browser at `http://localhost:3000`.
 
