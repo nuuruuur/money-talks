@@ -1,0 +1,24 @@
+{
+  "short_name": "MoneyTalks",
+  "name": "Money Talks - Pencatat Keuangan",
+  "description": "Aplikasi pencatat keuangan pribadi modern dan cepat.",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#33406C",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
+}
