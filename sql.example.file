@@ -1,0 +1,62 @@
+-- ==============================================================================
+-- DATABASE SCHEMA FOR MONYE APP
+-- Compatible with MySQL / PostgreSQL
+-- ==============================================================================
+
+-- Drop tables if they exist (useful when resetting the database)
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS wallets;
+
+-- --------------------------------------------------------
+-- 1. Wallets Table (Cash / Bank Accounts)
+-- --------------------------------------------------------
+CREATE TABLE wallets (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,            -- E.g.: 'Cash', 'Bank', 'E-Wallet'
+    balance DECIMAL(15, 2) DEFAULT 0.00,  -- Wallet balance (using DECIMAL for currency)
+    domain VARCHAR(255),                  -- Website platform (for Brandfetch logo)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- --------------------------------------------------------
+-- 2. Categories Table (Income / Expense Categories)
+-- --------------------------------------------------------
+CREATE TABLE categories (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,            -- E.g.: 'Income', 'Expense'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- --------------------------------------------------------
+-- 3. Transactions Table (Transaction Data)
+-- --------------------------------------------------------
+CREATE TABLE transactions (
+    id VARCHAR(50) PRIMARY KEY,
+    date DATE NOT NULL,
+    type VARCHAR(50) NOT NULL,            -- E.g.: 'Income', 'Expense', 'Transfer'
+    amount DECIMAL(15, 2) NOT NULL,       -- Amount of money
+    notes TEXT,                           -- Transaction notes (optional)
+    
+    -- Columns for regular Income / Expense
+    wallet_id VARCHAR(50) NULL,
+    category_id VARCHAR(50) NULL,
+    
+    -- Specific columns for 'Transfer' type
+    from_wallet_id VARCHAR(50) NULL,
+    to_wallet_id VARCHAR(50) NULL,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Define Relationships (Foreign Keys)
+    CONSTRAINT fk_wallet 
+        FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE SET NULL,
+    CONSTRAINT fk_category 
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    CONSTRAINT fk_from_wallet 
+        FOREIGN KEY (from_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL,
+    CONSTRAINT fk_to_wallet 
+        FOREIGN KEY (to_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL
+);
