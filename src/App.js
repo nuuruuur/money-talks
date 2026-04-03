@@ -1,10 +1,3 @@
-/**
- * Monye App - Personal Finance Tracker
- * * Features:
- * - Single Page Application (SPA) architecture for seamless navigation.
- * - Built-in Desmos Calculator integrated via Desmos API.
- * - Modern UI components inspired by shadcn/ui.
- */
 import React, {
   useState,
   createContext,
