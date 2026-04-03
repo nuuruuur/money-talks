@@ -1,6 +1,6 @@
-# Monye App
+# Money Talks App
 
-Monye App is a modern, beautifully designed personal finance tracker built as a React Single Page Application (SPA). It provides a seamless way to record transactions, manage multiple wallets, and visualize your financial flow, utilizing Google Sheets as a free, lightweight backend and Brandfetch for automatic brand logo detection.
+Money Talks App is a modern, beautifully designed personal finance tracker built as a React Single Page Application (SPA). It provides a seamless way to record transactions, manage multiple wallets, and visualize your financial flow, utilizing Google Sheets as a free, lightweight backend and Brandfetch for automatic brand logo detection.
 
 ---
 
@@ -25,8 +25,8 @@ Follow these simple steps to run the application locally:
 1. Clone Repository
 
 ~~~
-git clone [https://github.com/your-github-username/monye-main.git](https://github.com/your-github-username/monye-main.git)
-cd monye-main
+git `clone` https://github.com/nuuruuur/money-talks
+`cd` money-talks
 ~~~
 
 2. Install Dependencies
@@ -34,7 +34,7 @@ cd monye-main
 Run
 
 ~~~
-  npm install
+  `npm` install
 ~~~
 
 3. Environment Configuration (API Keys)
@@ -54,13 +54,13 @@ REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
 4. Run the Application
 
 ~~~
-  npm start
+  `npm` start
 ~~~
 
 The application will automatically open in your browser at `http://localhost:3000`.
 
-⚠️ Final Step Before Publishing (Very Important)
-
-Make sure you do not expose your `.env` file to the public.
-
-Check your `.gitignore` file and ensure that the `.env` file is listed inside it. This prevents your private API keys and URLs from being uploaded to your public GitHub repository.
+> ⚠️ Final Step Before Publishing (Very Important)
+>
+> Make sure you do not expose your `.env` file to the public.
+>
+>Check your `.gitignore` file and ensure that the `.env` file is listed inside it. This prevents your private API keys and URLs from being uploaded to your public GitHub repository.
