@@ -34,8 +34,7 @@ import {
 // KONFIGURASI DATABASE API
 // Masukkan URL Web App dari Google Apps Script Anda di sini
 const API_URL =
-  process.env.REACT_APP_APPSCRIPT_URL || 
-  "https://script.google.com/macros/s/AKfycbyGfd8GhA-oy0mVf_0fV_cVP-tWcKD9SE39CCehN2XkVKwvhzaFcSFoYgO9YNsoN0kSsQ/exec";
+  process.env.REACT_APP_APPSCRIPT_URL ;
 // ==========================================
 
 // --- CONTEXT (GLOBAL STATE) ---
@@ -712,7 +711,7 @@ const BrandIcon = ({ domain, size = 16, className = "" }) => {
     return <Wallet size={size} className={className} />;
   }
 
-  const brandfetchKey = process.env.REACT_APP_BRANDFETCH_API_KEY || "1idpg7kO2mvAgJplzZR";
+  const brandfetchKey = process.env.REACT_APP_BRANDFETCH_API_KEY  ;
 
   return (
     <img
