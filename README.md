@@ -6,6 +6,11 @@
 
 <h1 align="center">Money Talks</h1>
 
+<img align="left" width="80" height="80"
+src="./public/logo.png" alt="App icon">
+
+# FlorisBoard
+
 Money Talks App is a modern, beautifully designed personal finance tracker built as a React Single Page Application (SPA). It provides a seamless way to record transactions, manage multiple wallets, and visualize your financial flow, utilizing Google Sheets as a free, lightweight backend and Brandfetch for automatic brand logo detection.
 
 ---
