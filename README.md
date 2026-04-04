@@ -28,14 +28,14 @@ Money Talks App is a modern, beautifully designed personal finance tracker built
 
 Follow these simple steps to run the application locally:
 
-1. Clone Repository
+**1. Clone Repository**
 
 ~~~ bash
-git clone https://github.com/nuuruuur/money-talks
+  git clone https://github.com/nuuruuur/money-talks
 cd money-talks
 ~~~
 
-2. Install Dependencies
+**2. Install Dependencies**
 
 Run
 
@@ -43,7 +43,7 @@ Run
   npm install
 ~~~
 
-3. Environment Configuration (API Keys)
+**3. Environment Configuration (API Keys)**
 
 This application requires API keys and URLs to run properly.
 
@@ -52,18 +52,18 @@ Duplicate the `.env.example file` and rename it to `.env`.
 Open the `.env` file and fill in your Apps Script URL, Brandfetch API Key, and (optionally) Desmos API Key:
 
 ~~~ env
-REACT_APP_APPSCRIPT_URL=your_appscript_url_here
-REACT_APP_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
-REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
+  REACT_APP_APPSCRIPT_URL=your_appscript_url_here
+  REACT_APP_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
+  REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
 ~~~
 
-4. Run the Application
+**4. Run the Application**
 
 ~~~ bash
   npm start
 ~~~
 
-The application will automatically open in your browser at http://localhost:3000.
+The application will automatically open in your browser at `http://localhost:3000`.
 
 > ⚠️ Final Step Before Publishing (Very Important)
 >
