@@ -32,7 +32,7 @@ Follow these simple steps to run the application locally:
 
 ~~~ bash
   git clone https://github.com/nuuruuur/money-talks
-cd money-talks
+  cd money-talks
 ~~~
 
 **2. Install Dependencies**
