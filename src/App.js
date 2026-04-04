@@ -743,7 +743,7 @@ const FloatingCalculator = () => {
     };
 
     if (!document.getElementById(scriptId)) {
-      const desmosKey = process.env.REACT_APP_DESMOS_API_KEY || "aea0164e7c4348649ba21c93c4a4a54c";
+      const desmosKey = process.env.REACT_APP_DESMOS_API_KEY ;
       const script = document.createElement("script");
       script.id = scriptId;
       script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${desmosKey}`;
