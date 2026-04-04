@@ -54,7 +54,7 @@ Open the `.env` file and fill in your Apps Script URL, Brandfetch API Key, and (
 ~~~ env
   REACT_APP_APPSCRIPT_URL=your_appscript_url_here
   REACT_APP_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
-  REACT_APP_DESMOS_API_KEY=aea0164e7c4348649ba21c93c4a4a54c
+  REACT_APP_DESMOS_API_KEY=your_desmos_api_key_here
 ~~~
 
 **4. Run the Application**
