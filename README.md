@@ -21,7 +21,7 @@ Money Talks App is a modern, beautifully designed personal finance tracker built
 - **Cloud Data Storage:** Uses Google Spreadsheet as the primary database. The data is pulled into Google Apps Script, which serves as a lightweight backend API before being fetched by the frontend platform and FREE of course.
 
 - **Modern & Responsive UI:** Built using React and beautifully styled using Tailwind CSS with component architectures inspired by shadcn/ui [Shadcn UI](https://ui.shadcn.com "The Foundation for your Design System - shadcn/ui")
-Shadcn UI <a href="https://ui.shadcn.com" target="_blank" rel="The Foundation for your Design System - shadcn/ui">Open in New Tab</a>
+Shadcn UI <a href="https://ui.shadcn.com" target="_blank">Shadcn UI</a>
 , ensuring a clean, accessible, and highly mobile-responsive user experience.
 
 ---
