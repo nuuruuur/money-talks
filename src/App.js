@@ -18,6 +18,7 @@ import {
   Trash2,
   X,
   Calendar as CalendarIcon,
+  CalendarDays,
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -28,13 +29,14 @@ import {
   MoreHorizontal,
   Calculator as CalculatorIcon,
   Loader2,
+  PieChart,
+  Minus,
 } from "lucide-react";
 
 // ==========================================
 // KONFIGURASI DATABASE API
-// Masukkan URL Web App dari Google Apps Script Anda di sini
-const API_URL =
-  process.env.REACT_APP_APPSCRIPT_URL ;
+// Membaca URL Web App dari file .env
+const API_URL = process.env.REACT_APP_APPSCRIPT_URL || "URL_APPSCRIPT_ANDA_DI_SINI";
 // ==========================================
 
 // --- CONTEXT (GLOBAL STATE) ---
@@ -46,12 +48,12 @@ const AppProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch data from Spreadsheet on initial load
+  // Ambil data dari Spreadsheet saat aplikasi pertama kali dimuat
   useEffect(() => {
     const fetchData = async () => {
-      if (!API_URL) {
+      if (API_URL === "URL_APPSCRIPT_ANDA_DI_SINI") {
         console.warn(
-          "API URL is not configured. App will use an empty array."
+          "API URL belum diisi. Aplikasi akan menggunakan array kosong."
         );
         setIsLoading(false);
         return;
@@ -67,7 +69,7 @@ const AppProvider = ({ children }) => {
           setTransactions(data.data.transactions || []);
         }
       } catch (error) {
-        console.error("Failed to fetch data from server:", error);
+        console.error("Gagal mengambil data dari server:", error);
       } finally {
         setIsLoading(false);
       }
@@ -76,16 +78,16 @@ const AppProvider = ({ children }) => {
     fetchData();
   }, []);
 
-  // Helper function to sync data with the server
+  // Fungsi helper untuk mengirim data ke server
   const syncWithServer = async (action, data) => {
-    if (!API_URL) return;
+    if (API_URL === "URL_APPSCRIPT_ANDA_DI_SINI") return;
     try {
       await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify({ action, data }),
       });
     } catch (error) {
-      console.error(`Failed to sync action ${action}:`, error);
+      console.error(`Gagal sinkronisasi aksi ${action}:`, error);
     }
   };
 
@@ -121,7 +123,7 @@ const AppProvider = ({ children }) => {
     setTransactions([newTrx, ...transactions]);
     syncWithServer("addTransaction", newTrx);
 
-    // Update Wallet Balance locally and sync
+    // Update Saldo Dompet secara lokal dan sinkronisasi
     if (trx.type === "Income") {
       const wallet = wallets.find((w) => w.id === trx.wallet_id);
       if (wallet)
@@ -285,7 +287,7 @@ const PaginationEllipsis = ({ className, ...props }) => (
     {...props}
   >
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More pages</span>
+    <span className="sr-only">Lebih banyak halaman</span>
   </span>
 );
 
@@ -466,7 +468,7 @@ const Calendar = ({ selected, onSelect }) => {
     );
   };
 
-  const monthName = new Intl.DateTimeFormat("en-US", {
+  const monthName = new Intl.DateTimeFormat("id-ID", {
     month: "long",
     year: "numeric",
   }).format(currentMonth);
@@ -491,7 +493,7 @@ const Calendar = ({ selected, onSelect }) => {
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-[0.8rem] text-[#4C5D81] mb-2">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+        {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((d) => (
           <div key={d} className="font-medium">
             {d}
           </div>
@@ -650,21 +652,24 @@ const SelectItem = ({ value, children, className = "" }) => {
 
 // --- HELPER FUNCTIONS ---
 
-// Extract root domain (e.g. https://www.chase.com -> chase.com)
+// Mengekstrak root domain (misal: https://www.bca.co.id -> bca.co.id)
 const extractDomain = (url) => {
   if (!url) return "";
   let domain = url.trim();
+  // Hilangkan protokol http/https
   if (domain.indexOf("://") > -1) {
     domain = domain.split('/')[2];
   } else {
     domain = domain.split('/')[0];
   }
+  // Hilangkan port jika ada
   domain = domain.split(':')[0];
+  // Hilangkan www.
   domain = domain.replace(/^www\./, '');
   return domain;
 };
 
-// Format input with dots while typing
+// Fungsi memberi format titik saat mengetik angka (HANYA VISUAL)
 const formatNumberInput = (val) => {
   if (!val && val !== 0) return "";
   let stringVal = val.toString().replace(/\D/g, "");
@@ -673,22 +678,22 @@ const formatNumberInput = (val) => {
   return stringVal.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-// Parse input string to raw number
+// Fungsi menghapus titik saat akan disimpan (ANGKA MURNI)
 const parseNumberInput = (val) => {
   return val.toString().replace(/\./g, "").replace(/\D/g, "");
 };
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency: "IDR", // Keeping IDR as per base design, but localized to english formatting
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 const formatShortCurrency = (amount) =>
   amount >= 1000000
-    ? `Rp${(amount / 1000000).toFixed(1)}M`
+    ? `Rp${(amount / 1000000).toFixed(1)}Jt`
     : amount >= 1000
-    ? `Rp${(amount / 1000).toFixed(0)}k`
+    ? `Rp${(amount / 1000).toFixed(0)}rb`
     : `Rp${amount}`;
 const formatDateStr = (dateObj) => {
   const d = new Date(dateObj);
@@ -696,11 +701,48 @@ const formatDateStr = (dateObj) => {
   return d.toISOString().split("T")[0];
 };
 const formatDatePPP = (date) =>
-  new Intl.DateTimeFormat("en-US", {
+  new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(date);
+// Converts any date string ("YYYY-MM-DD" or full ISO) to "7 April 2026"
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    // Extract just the date part (handles both "YYYY-MM-DD" and ISO timestamps)
+    const datePart = String(dateStr).split("T")[0];
+    const parts = datePart.split("-");
+    if (parts.length === 3) {
+      const [y, m, d] = parts.map(Number);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const date = new Date(y, m - 1, d);
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      }
+    }
+    // Fallback: let JS parse it
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(date);
+    }
+    return String(dateStr);
+  } catch {
+    return String(dateStr);
+  }
+};
+// Extract just "YYYY-MM-DD" from any date string (for calculations)
+const normalizeDateStr = (dateStr) => {
+  if (!dateStr) return "";
+  return String(dateStr).split("T")[0];
+};
 
 // --- COMPONENT: BRAND ICON FALLBACK ---
 const BrandIcon = ({ domain, size = 16, className = "" }) => {
@@ -711,7 +753,7 @@ const BrandIcon = ({ domain, size = 16, className = "" }) => {
     return <Wallet size={size} className={className} />;
   }
 
-  const brandfetchKey = process.env.REACT_APP_BRANDFETCH_API_KEY  ;
+  const brandfetchKey = process.env.REACT_APP_BRANDFETCH_API_KEY || "";
 
   return (
     <img
@@ -742,9 +784,9 @@ const FloatingCalculator = () => {
     };
 
     if (!document.getElementById(scriptId)) {
-      const desmosKey = process.env.REACT_APP_DESMOS_API_KEY ;
       const script = document.createElement("script");
       script.id = scriptId;
+      const desmosKey = process.env.REACT_APP_DESMOS_API_KEY || "";
       script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${desmosKey}`;
       script.async = true;
       script.onload = initDesmos;
@@ -781,8 +823,8 @@ const FloatingCalculator = () => {
       >
         <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-[#33406C] shrink-0">
           <h3 className="font-semibold text-sm text-white flex items-center gap-2">
-            <CalculatorIcon size={16} className="text-[#F9C51C]" /> Quick
-            Calculator
+            <CalculatorIcon size={16} className="text-[#F9C51C]" /> Kalkulator
+            Cepat
           </h3>
           <button
             onClick={() => setIsOpen(false)}
@@ -814,7 +856,7 @@ const DashboardView = () => {
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#F9C51C]/10 rounded-full blur-3xl -ml-10 -mb-10"></div>
         <p className="text-[#F9C51C] text-sm md:text-base font-semibold mb-1 relative z-10 tracking-wide uppercase">
-          Total Combined Balance
+          Total Saldo Gabungan
         </p>
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight relative z-10 text-white">
           {formatCurrency(totalBalance)}
@@ -823,11 +865,11 @@ const DashboardView = () => {
 
       <div>
         <h2 className="text-lg md:text-xl font-bold mb-4 flex items-center gap-2 text-[#33406C]">
-          <Wallet size={20} className="text-[#4C5D81]" /> Wallets List
+          <Wallet size={20} className="text-[#4C5D81]" /> Daftar Dompet
         </h2>
         {wallets.length === 0 ? (
           <div className="text-center py-8 text-[#4C5D81] bg-white rounded-xl border border-dashed border-slate-300">
-            No wallets yet. Add one in Settings.
+            Belum ada dompet. Tambahkan di menu Settings.
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -869,7 +911,7 @@ const TransactionFormView = () => {
   const twoDaysAgo = new Date(today);
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-  const [dateSelection, setDateSelection] = useState("Today");
+  const [dateSelection, setDateSelection] = useState("Hari Ini");
   const [customDateObj, setCustomDateObj] = useState(today);
 
   const [amount, setAmount] = useState("");
@@ -901,18 +943,18 @@ const TransactionFormView = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || isNaN(parseFloat(amount)))
-      return alert("Enter a valid amount");
+      return alert("Masukkan jumlah yang valid");
     if (type !== "Transfer" && !walletId)
-      return alert("Select a Wallet first");
+      return alert("Pilih Dompet terlebih dahulu");
     if (type !== "Transfer" && !categoryId)
-      return alert("Select a Category first");
+      return alert("Pilih Kategori terlebih dahulu");
     if (type === "Transfer" && (!fromWalletId || !toWalletId))
-      return alert("Select Source and Destination Wallets");
+      return alert("Pilih Dompet Asal dan Tujuan");
 
     let finalDate;
-    if (dateSelection === "Today") finalDate = formatDateStr(today);
-    else if (dateSelection === "Yesterday") finalDate = formatDateStr(yesterday);
-    else if (dateSelection === "2 Days Ago")
+    if (dateSelection === "Hari Ini") finalDate = formatDateStr(today);
+    else if (dateSelection === "Kemarin") finalDate = formatDateStr(yesterday);
+    else if (dateSelection === "Kemarin Lusa")
       finalDate = formatDateStr(twoDaysAgo);
     else finalDate = formatDateStr(customDateObj);
 
@@ -925,7 +967,7 @@ const TransactionFormView = () => {
 
     if (type === "Transfer") {
       if (fromWalletId === toWalletId)
-        return alert("Source and destination wallets cannot be the same");
+        return alert("Dompet asal dan tujuan tidak boleh sama");
       trxData.from_wallet_id = fromWalletId;
       trxData.to_wallet_id = toWalletId;
       trxData.category_id = null;
@@ -935,7 +977,7 @@ const TransactionFormView = () => {
     }
 
     addTransaction(trxData);
-    alert("Transaction saved successfully!");
+    alert("Transaksi berhasil disimpan!");
     setAmount("");
     setNotes("");
   };
@@ -945,7 +987,7 @@ const TransactionFormView = () => {
   return (
     <div className="w-full max-w-xl mx-auto animate-in slide-in-from-bottom-2 space-y-4 md:space-y-6">
       <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-        Record Transaction
+        Catat Transaksi
       </h2>
 
       <div className="flex p-1.5 bg-slate-100 rounded-lg">
@@ -985,13 +1027,13 @@ const TransactionFormView = () => {
             )}
             <span className="hidden sm:inline">
               {t === "Income"
-                ? "Income"
+                ? "Pemasukan"
                 : t === "Expense"
-                ? "Expense"
+                ? "Pengeluaran"
                 : "Transfer"}
             </span>
             <span className="sm:hidden">
-              {t === "Income" ? "In" : t === "Expense" ? "Out" : "Trf"}
+              {t === "Income" ? "Masuk" : t === "Expense" ? "Keluar" : "Trf"}
             </span>
           </button>
         ))}
@@ -1001,7 +1043,7 @@ const TransactionFormView = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <div className="flex justify-between items-end">
-              <Label className="text-[#4C5D81]">Amount (IDR)</Label>
+              <Label className="text-[#4C5D81]">Jumlah (Rp)</Label>
               <div className="flex gap-1.5">
                 <button
                   type="button"
@@ -1031,9 +1073,9 @@ const TransactionFormView = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#4C5D81]">Date</Label>
+            <Label className="text-[#4C5D81]">Tanggal</Label>
             <div className="flex flex-wrap gap-2">
-              {["Today", "Yesterday", "2 Days Ago", "Custom"].map((ds) => (
+              {["Hari Ini", "Kemarin", "Kemarin Lusa", "Kustom"].map((ds) => (
                 <button
                   type="button"
                   key={ds}
@@ -1049,7 +1091,7 @@ const TransactionFormView = () => {
               ))}
             </div>
 
-            {dateSelection === "Custom" && (
+            {dateSelection === "Kustom" && (
               <div className="mt-3">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -1064,7 +1106,7 @@ const TransactionFormView = () => {
                       {customDateObj ? (
                         formatDatePPP(customDateObj)
                       ) : (
-                        <span>Select date</span>
+                        <span>Pilih tanggal</span>
                       )}
                       <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                     </Button>
@@ -1085,15 +1127,15 @@ const TransactionFormView = () => {
           {type !== "Transfer" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Wallet</Label>
+                <Label className="text-[#4C5D81]">Dompet</Label>
                 <Select value={walletId} onValueChange={setWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Select Wallet" />
+                    <SelectValue placeholder="Pilih Dompet" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {wallets.length === 0 && (
-                        <SelectLabel>No wallets yet</SelectLabel>
+                        <SelectLabel>Belum ada dompet</SelectLabel>
                       )}
                       {wallets.map((w) => (
                         <SelectItem key={w.id} value={w.id}>
@@ -1108,15 +1150,15 @@ const TransactionFormView = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">Category</Label>
+                <Label className="text-[#4C5D81]">Kategori</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Select Category" />
+                    <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {filteredCategories.length === 0 && (
-                        <SelectLabel>No categories yet</SelectLabel>
+                        <SelectLabel>Tidak ada kategori</SelectLabel>
                       )}
                       {filteredCategories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
@@ -1131,10 +1173,10 @@ const TransactionFormView = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">From Wallet</Label>
+                <Label className="text-[#4C5D81]">Dari Dompet</Label>
                 <Select value={fromWalletId} onValueChange={setFromWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Select Source" />
+                    <SelectValue placeholder="Pilih Asal" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -1151,10 +1193,10 @@ const TransactionFormView = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#4C5D81]">To Wallet</Label>
+                <Label className="text-[#4C5D81]">Ke Dompet</Label>
                 <Select value={toWalletId} onValueChange={setToWalletId}>
                   <SelectTrigger className="md:h-11">
-                    <SelectValue placeholder="Select Destination" />
+                    <SelectValue placeholder="Pilih Tujuan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -1174,10 +1216,10 @@ const TransactionFormView = () => {
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-[#4C5D81]">Notes (Optional)</Label>
+            <Label className="text-[#4C5D81]">Catatan (Opsional)</Label>
             <Input
               type="text"
-              placeholder="E.g. Lunch"
+              placeholder="Cth: Makan siang"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="md:h-11 text-[#33406C]"
@@ -1188,7 +1230,7 @@ const TransactionFormView = () => {
             type="submit"
             className="w-full mt-4 h-12 md:h-14 text-md md:text-lg bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold shadow-md"
           >
-            Save Transaction
+            Simpan Transaksi
           </Button>
         </form>
       </Card>
@@ -1252,7 +1294,7 @@ const HistoryView = () => {
     <div className="w-full max-w-2xl mx-auto animate-in slide-in-from-bottom-2 space-y-4 md:space-y-6">
       <div className="flex justify-between items-center z-20 relative">
         <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-          History
+          Riwayat
         </h2>
 
         <div className="flex items-center gap-2">
@@ -1263,9 +1305,9 @@ const HistoryView = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="10">10 / Page</SelectItem>
-                  <SelectItem value="20">20 / Page</SelectItem>
-                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="10">10 / Hlm</SelectItem>
+                  <SelectItem value="20">20 / Hlm</SelectItem>
+                  <SelectItem value="All">Semua</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -1278,9 +1320,9 @@ const HistoryView = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="All">All Types</SelectItem>
-                  <SelectItem value="Income">Income</SelectItem>
-                  <SelectItem value="Expense">Expense</SelectItem>
+                  <SelectItem value="All">Semua Tipe</SelectItem>
+                  <SelectItem value="Income">Pemasukan</SelectItem>
+                  <SelectItem value="Expense">Pengeluaran</SelectItem>
                   <SelectItem value="Transfer">Transfer</SelectItem>
                 </SelectGroup>
               </SelectContent>
@@ -1292,7 +1334,7 @@ const HistoryView = () => {
       <div className="space-y-3 md:space-y-4 min-h-[400px]">
         {currentItems.length === 0 ? (
           <div className="text-center text-[#4C5D81] py-12 bg-slate-50 rounded-xl md:rounded-2xl border border-dashed border-slate-300">
-            No transactions yet.
+            Belum ada transaksi.
           </div>
         ) : (
           currentItems.map((trx) => {
@@ -1323,12 +1365,12 @@ const HistoryView = () => {
                   <div className="overflow-hidden">
                     <p className="text-sm md:text-base font-bold text-[#33406C] truncate">
                       {trx.type === "Transfer"
-                        ? "Balance Transfer"
+                        ? "Transfer Saldo"
                         : category?.name || "Uncategorized"}
                     </p>
                     <div className="flex items-center text-xs md:text-sm text-[#4C5D81] gap-2 mt-0.5">
                       <span className="flex items-center gap-1 shrink-0">
-                        <CalendarIcon size={12} /> {trx.date}
+                        <CalendarIcon size={12} /> {formatDateDisplay(trx.date)}
                       </span>
                       <span className="shrink-0">•</span>
                       <span className="truncate flex items-center gap-1.5">
@@ -1424,27 +1466,265 @@ const HistoryView = () => {
   );
 };
 
-const RecapView = () => {
+const MONTH_NAMES_FULL = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+const MONTH_NAMES_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"];
+
+// --- DAILY CALENDAR CHART ---
+const DailyCalendar = ({ month, year, transactions }) => {
+  const [hoveredDay, setHoveredDay] = useState(null);
+
+  const dailyData = useMemo(() => {
+    const map = {};
+    transactions.forEach((t) => {
+      const [y, m, d] = t.date.split("-").map(Number);
+      if (m - 1 === month && y === year) {
+        if (!map[d]) map[d] = { income: 0, expense: 0 };
+        if (t.type === "Income") map[d].income += t.amount;
+        if (t.type === "Expense") map[d].expense += t.amount;
+      }
+    });
+    return map;
+  }, [transactions, month, year]);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+  const DAY_LABELS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+  return (
+    <div className="select-none">
+      <div className="grid grid-cols-7 mb-1">
+        {DAY_LABELS.map((d) => (
+          <div key={d} className="text-center text-[10px] md:text-xs font-bold text-[#4C5D81] py-1.5 uppercase tracking-wide">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const data = dailyData[day];
+          const hasIncome = data?.income > 0;
+          const hasExpense = data?.expense > 0;
+          const hasActivity = hasIncome || hasExpense;
+          const isToday = isCurrentMonth && today.getDate() === day;
+          const isHovered = hoveredDay === day;
+
+          return (
+            <div
+              key={day}
+              className="relative flex flex-col items-center"
+              onMouseEnter={() => setHoveredDay(day)}
+              onMouseLeave={() => setHoveredDay(null)}
+            >
+              <div className={`w-full aspect-square flex flex-col items-center justify-center rounded-lg transition-all duration-150 cursor-default
+                ${isToday ? "bg-[#33406C] text-white" : isHovered && hasActivity ? "bg-slate-100" : ""}
+                ${hasActivity && !isToday ? "ring-1 ring-slate-200" : ""}
+              `}>
+                <span className={`text-[10px] md:text-xs font-bold
+                  ${isToday ? "text-[#F9C51C]" : "text-[#33406C]"}
+                `}>
+                  {day}
+                </span>
+                <div className="flex gap-px mt-0.5">
+                  {hasIncome && (
+                    <span className={`rounded-full ${isToday ? "bg-green-300" : "bg-green-500"}`}
+                      style={{ width: 5, height: 5 }} />
+                  )}
+                  {hasExpense && (
+                    <span className={`rounded-full ${isToday ? "bg-red-300" : "bg-red-500"}`}
+                      style={{ width: 5, height: 5 }} />
+                  )}
+                </div>
+              </div>
+
+              {/* Tooltip */}
+              {isHovered && hasActivity && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+                  <div className="bg-[#33406C] text-white text-xs py-2 px-3 rounded-xl shadow-2xl whitespace-nowrap">
+                    <p className="font-bold text-center text-[#F9C51C] mb-1.5">
+                      {day} {MONTH_NAMES_SHORT[month]} {year}
+                    </p>
+                    {hasIncome && (
+                      <p className="text-green-300 font-semibold">
+                        ▲ {formatShortCurrency(data.income)}
+                      </p>
+                    )}
+                    {hasExpense && (
+                      <p className="text-red-300 font-semibold">
+                        ▼ {formatShortCurrency(data.expense)}
+                      </p>
+                    )}
+                    {hasIncome && hasExpense && (
+                      <p className="text-white/60 text-[10px] mt-1 border-t border-white/20 pt-1">
+                        Selisih: {formatShortCurrency(Math.abs(data.income - data.expense))}
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#33406C]" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 justify-center">
+        <div className="flex items-center gap-1.5 text-xs text-[#4C5D81] font-semibold">
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> Pemasukan
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-[#4C5D81] font-semibold">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Pengeluaran
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- REKAP BULANAN ---
+const MonthlyRecapTab = () => {
+  const { transactions, categories, wallets } = useContext(AppContext);
+  const today = new Date();
+  const [month, setMonth] = useState(today.getMonth());
+  const [year, setYear] = useState(today.getFullYear());
+
+  const handlePrev = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const handleNext = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const monthTrx = useMemo(() =>
+    transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === month && d.getFullYear() === year;
+    }),
+  [transactions, month, year]);
+
+  const totalIncome = useMemo(() => monthTrx.filter(t => t.type === "Income").reduce((a,t) => a + t.amount, 0), [monthTrx]);
+  const totalExpense = useMemo(() => monthTrx.filter(t => t.type === "Expense").reduce((a,t) => a + t.amount, 0), [monthTrx]);
+  const net = totalIncome - totalExpense;
+
+  const categoryBreakdown = useMemo(() => {
+    const map = {};
+    monthTrx.filter(t => t.type === "Expense").forEach(t => {
+      const cat = categories.find(c => c.id === t.category_id);
+      const name = cat?.name || "Lainnya";
+      map[name] = (map[name] || 0) + t.amount;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [monthTrx, categories]);
+
+  const maxCatAmount = categoryBreakdown.length > 0 ? categoryBreakdown[0][1] : 1;
+
+  return (
+    <div className="space-y-5">
+      {/* Month Navigator */}
+      <div className="flex items-center justify-between bg-[#33406C] text-white rounded-2xl px-5 py-4 shadow-md">
+        <button onClick={handlePrev} className="p-2 rounded-full hover:bg-white/20 transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="text-center">
+          <p className="font-black text-lg">{MONTH_NAMES_FULL[month]}</p>
+          <p className="text-[#F9C51C] text-sm font-bold">{year}</p>
+        </div>
+        <button onClick={handleNext} className="p-2 rounded-full hover:bg-white/20 transition-colors">
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+          <p className="text-[10px] md:text-xs font-bold text-green-600 uppercase flex items-center gap-1 mb-1">
+            <TrendingUp size={12} /> Masuk
+          </p>
+          <p className="text-sm md:text-base font-black text-green-700 leading-tight">{formatShortCurrency(totalIncome)}</p>
+        </div>
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+          <p className="text-[10px] md:text-xs font-bold text-red-500 uppercase flex items-center gap-1 mb-1">
+            <TrendingDown size={12} /> Keluar
+          </p>
+          <p className="text-sm md:text-base font-black text-red-600 leading-tight">{formatShortCurrency(totalExpense)}</p>
+        </div>
+        <div className={`border rounded-xl p-4 ${net >= 0 ? 'bg-[#33406C]/5 border-[#33406C]/20' : 'bg-orange-50 border-orange-100'}`}>
+          <p className="text-[10px] md:text-xs font-bold text-[#4C5D81] uppercase flex items-center gap-1 mb-1">
+            <Minus size={12} /> Selisih
+          </p>
+          <p className={`text-sm md:text-base font-black leading-tight ${net >= 0 ? 'text-[#33406C]' : 'text-orange-600'}`}>{formatShortCurrency(Math.abs(net))}</p>
+        </div>
+      </div>
+
+      {/* Category Breakdown */}
+      {categoryBreakdown.length > 0 && (
+        <Card className="p-5 shadow-sm">
+          <h3 className="font-bold text-sm md:text-base text-[#33406C] mb-4 flex items-center gap-2">
+            <PieChart size={16} className="text-[#4C5D81]" /> Pengeluaran per Kategori
+          </h3>
+          <div className="space-y-3">
+            {categoryBreakdown.map(([name, amount]) => {
+              const pct = Math.round((amount / maxCatAmount) * 100);
+              return (
+                <div key={name}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs md:text-sm font-semibold text-[#33406C] truncate">{name}</span>
+                    <span className="text-xs font-bold text-[#4C5D81] ml-2 shrink-0">{formatShortCurrency(amount)}</span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#4C5D81] rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Daily Calendar Chart */}
+      <Card className="p-5 shadow-sm">
+        <h3 className="font-bold text-sm md:text-base text-[#33406C] mb-4 flex items-center gap-2">
+          <CalendarDays size={16} className="text-[#4C5D81]" /> Aktivitas Harian
+          <span className="text-xs font-normal text-[#4C5D81] ml-1">— arahkan kursor ke tanggal</span>
+        </h3>
+        {monthTrx.length === 0 ? (
+          <div className="text-center text-[#4C5D81] py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-sm">
+            Tidak ada transaksi di bulan ini.
+          </div>
+        ) : (
+          <DailyCalendar month={month} year={year} transactions={monthTrx} />
+        )}
+      </Card>
+    </div>
+  );
+};
+
+// --- REKAP TAHUNAN ---
+const YearlyRecapTab = () => {
   const { transactions } = useContext(AppContext);
 
   const availableYears = useMemo(() => {
-    const years = new Set(
-      transactions.map((t) => new Date(t.date).getFullYear())
-    );
+    const years = new Set(transactions.map((t) => new Date(t.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
   }, [transactions]);
 
   const [selectedYear, setSelectedYear] = useState(
-    availableYears.length > 0
-      ? availableYears[0].toString()
-      : new Date().getFullYear().toString()
+    availableYears.length > 0 ? availableYears[0].toString() : new Date().getFullYear().toString()
   );
 
   React.useEffect(() => {
-    if (
-      availableYears.length > 0 &&
-      !availableYears.includes(Number(selectedYear))
-    ) {
+    if (availableYears.length > 0 && !availableYears.includes(Number(selectedYear))) {
       setSelectedYear(availableYears[0].toString());
     }
   }, [availableYears, selectedYear]);
@@ -1461,124 +1741,125 @@ const RecapView = () => {
     return data;
   }, [transactions, selectedYear]);
 
-  const totalYearlyIncome = monthlyFlow.reduce(
-    (acc, curr) => acc + curr.income,
-    0
-  );
-  const totalYearlyExpense = monthlyFlow.reduce(
-    (acc, curr) => acc + curr.expense,
-    0
-  );
-  const maxFlowAmount = Math.max(
-    ...monthlyFlow.map((d) => Math.max(d.income, d.expense)),
-    1
-  );
+  const totalYearlyIncome = monthlyFlow.reduce((acc, curr) => acc + curr.income, 0);
+  const totalYearlyExpense = monthlyFlow.reduce((acc, curr) => acc + curr.expense, 0);
+  const maxFlowAmount = Math.max(...monthlyFlow.map((d) => Math.max(d.income, d.expense)), 1);
 
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  if (availableYears.length === 0) {
+    return (
+      <div className="text-center text-[#4C5D81] py-12 bg-slate-50 rounded-xl md:rounded-2xl border border-dashed border-slate-300">
+        Belum ada data transaksi.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end z-20 relative">
+        <div className="w-24 md:w-32">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="h-8 md:h-10 py-1 text-xs md:text-sm bg-white/80 backdrop-blur-sm shadow-sm font-semibold text-[#33406C]">
+              <SelectValue placeholder="Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Card className="p-5 md:p-8 space-y-6 md:space-y-8 shadow-sm">
+        <div className="grid grid-cols-2 gap-4 md:gap-8 border-b border-slate-100 pb-6">
+          <div className="bg-[#33406C]/5 p-4 rounded-xl">
+            <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
+              <TrendingUp size={16} className="text-green-500" /> Total Masuk
+            </p>
+            <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
+              {formatCurrency(totalYearlyIncome)}
+            </h3>
+          </div>
+          <div className="bg-red-50 p-4 rounded-xl">
+            <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
+              <TrendingDown size={16} className="text-red-500" /> Total Keluar
+            </p>
+            <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
+              {formatCurrency(totalYearlyExpense)}
+            </h3>
+          </div>
+        </div>
+
+        <div className="flex items-end h-48 md:h-64 gap-1.5 md:gap-3 pt-4 pb-1">
+          {monthlyFlow.map((data, index) => {
+            const incHeight = (data.income / maxFlowAmount) * 100;
+            const expHeight = (data.expense / maxFlowAmount) * 100;
+            return (
+              <div key={index} className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-default">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-14 bg-[#33406C] text-white text-[10px] md:text-xs py-1.5 px-3 rounded-md pointer-events-none whitespace-nowrap z-10 shadow-xl flex flex-col gap-0.5">
+                  <span className="text-green-300 font-medium">Masuk: {formatShortCurrency(data.income)}</span>
+                  <span className="text-[#F9C51C] font-medium">Keluar: {formatShortCurrency(data.expense)}</span>
+                </div>
+                <div className="w-full flex justify-center items-end h-full gap-[1px] md:gap-1">
+                  <div className="w-1/2 max-w-[16px] md:max-w-[24px] bg-green-400 group-hover:bg-green-500 rounded-t-sm md:rounded-t-md transition-all duration-700 ease-out shadow-sm" style={{ height: `${incHeight}%` }}></div>
+                  <div className="w-1/2 max-w-[16px] md:max-w-[24px] bg-[#4C5D81] group-hover:bg-[#33406C] rounded-t-sm md:rounded-t-md transition-all duration-700 ease-out shadow-sm" style={{ height: `${expHeight}%` }}></div>
+                </div>
+                <span className="text-[9px] md:text-xs text-[#4C5D81] font-bold mt-2 md:mt-3 uppercase">
+                  {MONTH_NAMES_SHORT[index]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-2 text-xs text-[#4C5D81] font-semibold">
+            <span className="inline-block w-3 h-3 rounded-sm bg-green-400"></span> Pemasukan
+          </div>
+          <div className="flex items-center gap-2 text-xs text-[#4C5D81] font-semibold">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#4C5D81]"></span> Pengeluaran
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const RecapView = () => {
+  const [activeTab, setActiveTab] = useState("monthly");
 
   return (
     <div className="w-full max-w-3xl mx-auto animate-in slide-in-from-bottom-2 space-y-5 md:space-y-6">
-      <div className="flex justify-between items-center z-20 relative">
-        <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">
-          Data Recap
-        </h2>
-
-        {availableYears.length > 0 && (
-          <div className="w-24 md:w-32">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-8 md:h-10 py-1 text-xs md:text-sm bg-white/80 backdrop-blur-sm shadow-sm font-semibold text-[#33406C]">
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {availableYears.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl md:text-2xl font-bold text-[#33406C]">Rekap Data</h2>
       </div>
 
-      {availableYears.length === 0 ? (
-        <div className="text-center text-[#4C5D81] py-12 bg-slate-50 rounded-xl md:rounded-2xl border border-dashed border-slate-300">
-          No transaction data yet.
-        </div>
-      ) : (
-        <Card className="p-5 md:p-8 space-y-6 md:space-y-8 shadow-sm">
-          <div className="grid grid-cols-2 gap-4 md:gap-8 border-b border-slate-100 pb-6">
-            <div className="bg-[#33406C]/5 p-4 rounded-xl">
-              <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
-                <TrendingUp size={16} className="text-green-500" /> Total Income
-              </p>
-              <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
-                {formatCurrency(totalYearlyIncome)}
-              </h3>
-            </div>
-            <div className="bg-red-50 p-4 rounded-xl">
-              <p className="text-xs md:text-sm font-bold text-[#4C5D81] uppercase flex items-center gap-1.5 mb-1">
-                <TrendingDown size={16} className="text-red-500" /> Total Expense
-              </p>
-              <h3 className="text-lg sm:text-xl md:text-3xl font-bold text-[#33406C] leading-tight truncate">
-                {formatCurrency(totalYearlyExpense)}
-              </h3>
-            </div>
-          </div>
+      <div className="flex p-1.5 bg-slate-100 rounded-xl">
+        <button
+          onClick={() => setActiveTab("monthly")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ${
+            activeTab === "monthly"
+              ? "bg-[#33406C] text-[#F9C51C] shadow-md"
+              : "text-[#4C5D81] hover:text-[#33406C] hover:bg-white/50"
+          }`}
+        >
+          <CalendarDays size={16} /> Rekap Bulanan
+        </button>
+        <button
+          onClick={() => setActiveTab("yearly")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ${
+            activeTab === "yearly"
+              ? "bg-[#33406C] text-[#F9C51C] shadow-md"
+              : "text-[#4C5D81] hover:text-[#33406C] hover:bg-white/50"
+          }`}
+        >
+          <BarChart3 size={16} /> Rekap Tahunan
+        </button>
+      </div>
 
-          <div className="flex items-end h-48 md:h-64 gap-1.5 md:gap-3 pt-4 pb-1">
-            {monthlyFlow.map((data, index) => {
-              const incHeight = (data.income / maxFlowAmount) * 100;
-              const expHeight = (data.expense / maxFlowAmount) * 100;
-              return (
-                <div
-                  key={index}
-                  className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-default"
-                >
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-14 bg-[#33406C] text-white text-[10px] md:text-xs py-1.5 px-3 rounded-md pointer-events-none whitespace-nowrap z-10 shadow-xl flex flex-col gap-0.5">
-                    <span className="text-green-300 font-medium">
-                      Income: {formatShortCurrency(data.income)}
-                    </span>
-                    <span className="text-[#F9C51C] font-medium">
-                      Expense: {formatShortCurrency(data.expense)}
-                    </span>
-                  </div>
-
-                  <div className="w-full flex justify-center items-end h-full gap-[1px] md:gap-1">
-                    <div
-                      className="w-1/2 max-w-[16px] md:max-w-[24px] bg-green-400 group-hover:bg-green-500 rounded-t-sm md:rounded-t-md transition-all duration-700 ease-out shadow-sm"
-                      style={{ height: `${incHeight}%` }}
-                    ></div>
-                    <div
-                      className="w-1/2 max-w-[16px] md:max-w-[24px] bg-[#4C5D81] group-hover:bg-[#33406C] rounded-t-sm md:rounded-t-md transition-all duration-700 ease-out shadow-sm"
-                      style={{ height: `${expHeight}%` }}
-                    ></div>
-                  </div>
-
-                  <span className="text-[9px] md:text-xs text-[#4C5D81] font-bold mt-2 md:mt-3 uppercase">
-                    {monthNames[index]}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
+      {activeTab === "monthly" ? <MonthlyRecapTab /> : <YearlyRecapTab />}
     </div>
   );
 };
@@ -1597,7 +1878,7 @@ const SettingsView = () => {
   const [walletName, setWalletName] = useState("");
   const [walletType, setWalletType] = useState("Cash");
   const [walletBalance, setWalletBalance] = useState("");
-  const [walletDomain, setWalletDomain] = useState(""); 
+  const [walletDomain, setWalletDomain] = useState(""); // STATE BARU UNTUK WEBSITE DOMAIN
 
   const [catName, setCatName] = useState("");
   const [catType, setCatType] = useState("Expense");
@@ -1616,7 +1897,7 @@ const SettingsView = () => {
       name: walletName,
       type: walletType,
       balance: parseFloat(walletBalance) || 0,
-      domain: extractDomain(walletDomain),
+      domain: extractDomain(walletDomain), // Simpan versi bersih dari domain yang diinput
     });
     setIsWalletDialogOpen(false);
     setWalletName("");
@@ -1648,7 +1929,7 @@ const SettingsView = () => {
               : "border-transparent text-[#4C5D81] hover:text-[#33406C]"
           }`}
         >
-          Wallets
+          Dompet
         </button>
         <button
           onClick={() => setActiveTab("categories")}
@@ -1658,7 +1939,7 @@ const SettingsView = () => {
               : "border-transparent text-[#4C5D81] hover:text-[#33406C]"
           }`}
         >
-          Categories
+          Kategori
         </button>
       </div>
 
@@ -1673,47 +1954,48 @@ const SettingsView = () => {
                 variant="outline"
                 className="w-full mb-2 md:h-12 border-dashed border-2 border-[#33406C]/40 bg-white text-[#33406C] font-bold hover:bg-[#33406C]/5 hover:border-[#33406C]"
               >
-                <Plus size={20} className="mr-2 text-[#33406C]" /> Add New Wallet
+                <Plus size={20} className="mr-2 text-[#33406C]" /> Tambah Dompet
+                Baru
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <form onSubmit={handleAddWallet}>
                 <DialogHeader>
-                  <DialogTitle>Add Wallet</DialogTitle>
+                  <DialogTitle>Tambah Dompet</DialogTitle>
                   <DialogDescription>
-                    Enter your new wallet or bank account details here.
+                    Masukkan detail dompet atau rekening baru Anda di sini.
                   </DialogDescription>
                 </DialogHeader>
                 <FieldGroup>
                   <Field>
-                    <Label htmlFor="w-name">Wallet Name</Label>
+                    <Label htmlFor="w-name">Nama Dompet</Label>
                     <Input
                       id="w-name"
                       value={walletName}
                       onChange={(e) => setWalletName(e.target.value)}
                       required
-                      placeholder="E.g. Chase, PayPal..."
+                      placeholder="Cth: BCA, OVO..."
                     />
                   </Field>
                   <Field>
                     <Label htmlFor="w-domain">
-                      Platform Website (Optional)
+                      Website Platform (Opsional)
                     </Label>
                     <Input
                       id="w-domain"
                       value={walletDomain}
                       onChange={(e) => setWalletDomain(e.target.value)}
-                      placeholder="E.g. chase.com, paypal.com"
+                      placeholder="Cth: bca.co.id, ovo.id"
                     />
                     <span className="text-[10px] text-[#4C5D81]">
-                      Enter platform web to show logo automatically.
+                      Masukkan web platform untuk menampilkan logo otomatis.
                     </span>
                   </Field>
                   <Field>
-                    <Label>Type</Label>
+                    <Label>Tipe</Label>
                     <Select value={walletType} onValueChange={setWalletType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Type" />
+                        <SelectValue placeholder="Pilih Tipe" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -1726,7 +2008,7 @@ const SettingsView = () => {
                   </Field>
                   <Field>
                     <div className="flex justify-between items-end">
-                      <Label htmlFor="w-bal">Initial Balance (IDR)</Label>
+                      <Label htmlFor="w-bal">Saldo Awal (Rp)</Label>
                       <div className="flex gap-1.5">
                         <button
                           type="button"
@@ -1760,14 +2042,14 @@ const SettingsView = () => {
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
-                      Cancel
+                      Batal
                     </Button>
                   </DialogClose>
                   <Button
                     type="submit"
                     className="bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold"
                   >
-                    Save
+                    Simpan
                   </Button>
                 </DialogFooter>
               </form>
@@ -1792,7 +2074,7 @@ const SettingsView = () => {
                       </span>
                     </p>
                     <p className="text-xs md:text-sm text-[#4C5D81] mt-0.5 truncate">
-                      Balance: {formatCurrency(w.balance)}
+                      Saldo: {formatCurrency(w.balance)}
                     </p>
                   </div>
                 </div>
@@ -1820,38 +2102,39 @@ const SettingsView = () => {
                 variant="outline"
                 className="w-full mb-2 md:h-12 border-dashed border-2 border-[#33406C]/40 bg-white text-[#33406C] font-bold hover:bg-[#33406C]/5 hover:border-[#33406C]"
               >
-                <Plus size={20} className="mr-2 text-[#33406C]" /> Add New Category
+                <Plus size={20} className="mr-2 text-[#33406C]" /> Tambah
+                Kategori Baru
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <form onSubmit={handleAddCategory}>
                 <DialogHeader>
-                  <DialogTitle>Add Category</DialogTitle>
+                  <DialogTitle>Tambah Kategori</DialogTitle>
                   <DialogDescription>
-                    Enter new income or expense category name.
+                    Masukkan nama kategori pengeluaran atau pemasukan baru.
                   </DialogDescription>
                 </DialogHeader>
                 <FieldGroup>
                   <Field>
-                    <Label htmlFor="c-name">Category Name</Label>
+                    <Label htmlFor="c-name">Nama Kategori</Label>
                     <Input
                       id="c-name"
                       value={catName}
                       onChange={(e) => setCatName(e.target.value)}
                       required
-                      placeholder="E.g. Groceries..."
+                      placeholder="Cth: Belanja..."
                     />
                   </Field>
                   <Field>
-                    <Label>Category Type</Label>
+                    <Label>Tipe Kategori</Label>
                     <Select value={catType} onValueChange={setCatType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Type" />
+                        <SelectValue placeholder="Pilih Tipe" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="Expense">Expense</SelectItem>
-                          <SelectItem value="Income">Income</SelectItem>
+                          <SelectItem value="Expense">Pengeluaran</SelectItem>
+                          <SelectItem value="Income">Pemasukan</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -1860,14 +2143,14 @@ const SettingsView = () => {
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
-                      Cancel
+                      Batal
                     </Button>
                   </DialogClose>
                   <Button
                     type="submit"
                     className="bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] font-bold"
                   >
-                    Save
+                    Simpan
                   </Button>
                 </DialogFooter>
               </form>
@@ -1948,9 +2231,9 @@ const NavButton = ({ active, onClick, icon, label }) => {
 const LoadingScreen = () => (
   <div className="absolute inset-0 bg-[#f8f9fa] z-[200] flex flex-col items-center justify-center">
     <Loader2 className="h-12 w-12 text-[#F9C51C] animate-spin mb-4" />
-    <h2 className="text-xl font-bold text-[#33406C] mb-2">Processing data...</h2>
+    <h2 className="text-xl font-bold text-[#33406C] mb-2">Memproses data...</h2>
     <p className="text-[#4C5D81] text-sm text-center px-6">
-      Please wait, fetching data from Spreadsheet.
+      Harap menunggu, mengambil data dari Spreadsheet.
     </p>
   </div>
 );
@@ -1961,14 +2244,20 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    // Event ini hanya akan dipicu oleh browser (khususnya Android Chrome) 
+    // JIKA web Anda memiliki manifest.json dan service worker yang valid.
     const handler = (e) => {
+      // Cegah mini-infobar bawaan Chrome agar tidak muncul
       e.preventDefault();
+      // Simpan event agar bisa dipicu nanti saat tombol diklik
       setDeferredPrompt(e);
+      // Tampilkan popup custom kita
       setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
+    // Sembunyikan popup jika user berhasil menginstal dari menu browser
     window.addEventListener("appinstalled", () => {
       setShowPrompt(false);
     });
@@ -1980,7 +2269,9 @@ const InstallPrompt = () => {
 
   const handleInstall = async () => {
     if (deferredPrompt) {
+      // Munculkan prompt install bawaan Android
       deferredPrompt.prompt();
+      // Tunggu respons user
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setDeferredPrompt(null);
@@ -1999,6 +2290,7 @@ const InstallPrompt = () => {
           alt="App Logo" 
           className="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-100 p-0.5" 
           onError={(e) => {
+            // Fallback jika logo.png tidak ditemukan
             e.target.style.display = 'none';
             e.target.nextSibling.style.display = 'flex';
           }}
@@ -2011,7 +2303,7 @@ const InstallPrompt = () => {
       <div className="flex-1">
         <h4 className="font-bold text-sm text-[#33406C]">Install Money Talks</h4>
         <p className="text-[10px] md:text-xs text-[#4C5D81] leading-tight mt-0.5">
-          Add to home screen for faster access.
+          Tambahkan ke layar utama agar lebih cepat diakses.
         </p>
       </div>
       
@@ -2026,12 +2318,27 @@ const InstallPrompt = () => {
           onClick={() => setShowPrompt(false)} 
           className="bg-slate-100 text-[#4C5D81] text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
         >
-          Later
+          Nanti
         </button>
       </div>
     </div>
   );
 };
+
+// --- DESKTOP SIDEBAR NAV ITEM ---
+const SideNavItem = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 text-left
+      ${active
+        ? "bg-white text-[#33406C] shadow-md"
+        : "text-white/70 hover:bg-white/10 hover:text-white"
+      }`}
+  >
+    <span className={active ? "text-[#33406C]" : ""}>{icon}</span>
+    <span>{label}</span>
+  </button>
+);
 
 // --- MAIN LAYOUT ---
 const AppContent = () => {
@@ -2051,98 +2358,145 @@ const AppContent = () => {
 
   const renderView = () => {
     switch (currentView) {
-      case "dashboard":
-        return <DashboardView />;
-      case "transaction":
-        return <TransactionFormView />;
-      case "history":
-        return <HistoryView />;
-      case "recap":
-        return <RecapView />;
-      case "settings":
-        return <SettingsView />;
-      default:
-        return <DashboardView />;
+      case "dashboard": return <DashboardView />;
+      case "transaction": return <TransactionFormView />;
+      case "history": return <HistoryView />;
+      case "recap": return <RecapView />;
+      case "settings": return <SettingsView />;
+      default: return <DashboardView />;
     }
   };
 
+  const navItems = [
+    { key: "dashboard", icon: <Home size={20} />, label: "Beranda" },
+    { key: "transaction", icon: <Plus size={20} />, label: "Catat Transaksi" },
+    { key: "history", icon: <History size={20} />, label: "Riwayat" },
+    { key: "recap", icon: <BarChart3 size={20} />, label: "Rekap" },
+    { key: "settings", icon: <Settings size={20} />, label: "Pengaturan" },
+  ];
+
   return (
-    <div className="min-h-[100dvh] w-full bg-slate-100 flex justify-center items-center font-sans md:p-6 lg:p-10 text-[#33406C]">
-      <div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl bg-white relative flex flex-col shadow-2xl h-[100dvh] md:h-[90vh] md:rounded-3xl overflow-hidden md:border border-slate-200">
+    <div className="font-sans text-[#33406C]">
+
+      {/* ===== DESKTOP LAYOUT (md+) ===== */}
+      <div className="hidden md:flex h-screen overflow-hidden bg-slate-100">
+
+        {/* Sidebar — fixed width, full height */}
+        <aside className="w-56 lg:w-64 bg-[#33406C] flex flex-col shadow-2xl flex-shrink-0 h-full">
+          {/* Logo */}
+          <div className="px-5 py-5 border-b border-white/10 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="bg-[#F9C51C] text-[#33406C] p-2 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
+                <img src="/logo.svg" alt="Logo" className="w-6 h-6 object-contain" />
+              </span>
+              <div>
+                <h1 className="text-base font-black text-white tracking-tight">Money Talks</h1>
+                <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest">Personal Finance</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Nav Items */}
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            {navItems.map(item => (
+              <SideNavItem
+                key={item.key}
+                active={currentView === item.key}
+                onClick={() => setCurrentView(item.key)}
+                icon={item.icon}
+                label={item.label}
+              />
+            ))}
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
+            <p className="text-[10px] text-white/30 leading-relaxed">
+              Data tersinkron dengan Google Sheets
+            </p>
+          </div>
+        </aside>
+
+        {/* Main area — fills remaining width, no scroll on outer */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {/* Top bar */}
+          <header className="bg-white border-b border-slate-200 px-8 py-3 flex items-center justify-between flex-shrink-0 shadow-sm z-40">
+            <div>
+              <h2 className="text-lg font-black text-[#33406C]">
+                {navItems.find(n => n.key === currentView)?.label || "Beranda"}
+              </h2>
+              <p className="text-xs text-[#4C5D81]">
+                {new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-[#4C5D81] bg-slate-100 px-3 py-1.5 rounded-full hidden lg:inline-flex">
+                Selamat datang!
+              </span>
+              <FloatingCalculator />
+            </div>
+          </header>
+
+          {/* Scrollable page content */}
+          <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+            {isLoading && (
+              <div className="absolute inset-0 bg-slate-50/90 z-[200] flex flex-col items-center justify-center">
+                <Loader2 className="h-10 w-10 text-[#F9C51C] animate-spin mb-3" />
+                <h2 className="text-lg font-bold text-[#33406C] mb-1">Memproses data...</h2>
+                <p className="text-[#4C5D81] text-sm">Harap menunggu, mengambil data dari Spreadsheet.</p>
+              </div>
+            )}
+            {!isLoading && (
+              <div className="p-6 lg:p-8">
+                {renderView()}
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {/* ===== MOBILE LAYOUT (< md) ===== */}
+      <div className="md:hidden flex flex-col h-[100dvh] w-full bg-white relative">
         {isLoading && <LoadingScreen />}
         <InstallPrompt />
 
-        <header className="bg-white/90 backdrop-blur-md px-6 md:px-10 py-4 md:py-6 border-b border-slate-100 sticky top-0 z-[100] flex justify-between items-center w-full">
-          <h1 className="text-xl md:text-2xl font-black flex items-center gap-3 text-[#33406C] tracking-tight">
-            <span className="bg-[#33406C] text-[#F9C51C] p-2 md:p-2.5 rounded-lg md:rounded-xl shadow-md flex items-center justify-center">
-              <img src="/logo.svg" alt="Logo" className="w-6 h-6 md:w-7 md:h-7 object-contain" />
+        <header className="bg-white/90 backdrop-blur-md px-5 py-4 border-b border-slate-100 sticky top-0 z-[100] flex justify-between items-center w-full">
+          <h1 className="text-xl font-black flex items-center gap-2.5 text-[#33406C] tracking-tight">
+            <span className="bg-[#33406C] text-[#F9C51C] p-2 rounded-lg shadow-md flex items-center justify-center">
+              <img src="/logo.svg" alt="Logo" className="w-5 h-5 object-contain" />
             </span>
             Money Talks
           </h1>
-
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="hidden md:inline-flex text-xs font-bold text-[#4C5D81] bg-slate-100 px-3 py-1.5 rounded-full items-center tracking-wide">
-              Personal Finance
-            </span>
-            <FloatingCalculator />
-          </div>
+          <FloatingCalculator />
         </header>
 
-        <main className="flex-1 w-full overflow-y-auto p-4 sm:p-6 md:p-10 pb-32 md:pb-40 overflow-x-hidden relative z-0">
+        <main className="flex-1 w-full overflow-y-auto p-4 sm:p-5 pb-32 overflow-x-hidden relative z-0">
           {!isLoading && renderView()}
         </main>
 
-        <div className="absolute bottom-6 md:bottom-8 left-0 right-0 flex justify-center pointer-events-none z-[60] w-full px-4">
-          <nav className="pointer-events-auto flex items-center p-1.5 md:p-2 bg-white/90 backdrop-blur-xl border border-slate-200/60 rounded-full shadow-[0_8px_40px_rgba(51,64,108,0.15)] transition-all duration-500 ease-out hover:bg-white hover:shadow-[0_12px_50px_rgba(51,64,108,0.2)] hover:scale-[1.02] active:bg-white active:scale-100 max-w-full overflow-x-auto no-scrollbar">
-            <NavButton
-              active={currentView === "dashboard"}
-              onClick={() => setCurrentView("dashboard")}
-              icon={<Home size={22} />}
-              label="Home"
-            />
-            <NavButton
-              active={currentView === "history"}
-              onClick={() => setCurrentView("history")}
-              icon={<History size={22} />}
-              label="History"
-            />
+        <div className="absolute bottom-5 left-0 right-0 flex justify-center pointer-events-none z-[60] w-full px-4">
+          <nav className="pointer-events-auto flex items-center p-1.5 bg-white/90 backdrop-blur-xl border border-slate-200/60 rounded-full shadow-[0_8px_40px_rgba(51,64,108,0.15)] max-w-full overflow-x-auto no-scrollbar">
+            <NavButton active={currentView === "dashboard"} onClick={() => setCurrentView("dashboard")} icon={<Home size={22} />} label="Home" />
+            <NavButton active={currentView === "history"} onClick={() => setCurrentView("history")} icon={<History size={22} />} label="History" />
 
-            <div className="px-1.5 md:px-2 relative shrink-0">
+            <div className="px-1.5 relative shrink-0">
               <button
-                onClick={() =>
-                  setCurrentView(
-                    currentView === "transaction" ? "dashboard" : "transaction"
-                  )
-                }
-                className={`flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full shadow-lg transition-all duration-300 z-10 hover:scale-110 active:scale-95 ${
+                onClick={() => setCurrentView(currentView === "transaction" ? "dashboard" : "transaction")}
+                className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all duration-300 z-10 hover:scale-110 active:scale-95 ${
                   currentView === "transaction"
                     ? "bg-[#4C5D81] text-white rotate-90 shadow-[0_4px_20px_rgba(76,93,129,0.4)]"
                     : "bg-[#F9C51C] text-[#33406C] hover:bg-[#e0b018] shadow-[0_4px_20px_rgba(249,197,28,0.4)]"
                 }`}
               >
-                {currentView === "transaction" ? (
-                  <X
-                    size={24}
-                    className="-rotate-90 transition-transform duration-300"
-                  />
-                ) : (
-                  <Plus size={26} strokeWidth={2.5} />
-                )}
+                {currentView === "transaction"
+                  ? <X size={22} className="-rotate-90 transition-transform duration-300" />
+                  : <Plus size={24} strokeWidth={2.5} />
+                }
               </button>
             </div>
 
-            <NavButton
-              active={currentView === "recap"}
-              onClick={() => setCurrentView("recap")}
-              icon={<BarChart3 size={22} />}
-              label="Recap"
-            />
-            <NavButton
-              active={currentView === "settings"}
-              onClick={() => setCurrentView("settings")}
-              icon={<Settings size={22} />}
-              label="Settings"
-            />
+            <NavButton active={currentView === "recap"} onClick={() => setCurrentView("recap")} icon={<BarChart3 size={22} />} label="Rekap" />
+            <NavButton active={currentView === "settings"} onClick={() => setCurrentView("settings")} icon={<Settings size={22} />} label="Settings" />
           </nav>
         </div>
       </div>
